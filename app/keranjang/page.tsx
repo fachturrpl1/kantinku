@@ -17,6 +17,12 @@ export default function HalamanKeranjang() {
     const [kodePromo, setKodePromo] = useState('');
     const [diskon, setDiskon] = useState(0);
     const [pesanPromo, setPesanPromo] = useState('');
+    
+    const [metodeKirim, setMetodeKirim] = useState('ambil');
+    const [namaPemesan, setNamaPemesan] = useState('');
+    const [kelas, setKelas] = useState('');
+    const [pesanError, setPesanError] = useState('');
+    const [strukData, setStrukData] = useState<any>(null);
 
     useEffect(() => {
         const data = localStorage.getItem('keranjang');
@@ -81,11 +87,81 @@ export default function HalamanKeranjang() {
         }
     }, [subtotal, diskon]);
 
+    const ongkir = metodeKirim === 'diantar' ? 2000 : 0;
+    const totalBayar = subtotal - diskon + ongkir;
+
+    const handlePesanSekarang = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (namaPemesan.trim().length < 3) {
+            setPesanError('Nama pemesan wajib diisi minimal 3 huruf.');
+            return;
+        }
+        if (metodeKirim === 'diantar' && kelas.trim().length < 3) {
+            setPesanError('Kelas wajib diisi minimal 3 karakter jika diantar.');
+            return;
+        }
+
+        const dataPesananBaru = {
+            id: Date.now(),
+            nama: namaPemesan,
+            kelas: metodeKirim === 'diantar' ? kelas : '-',
+            metode: metodeKirim,
+            item: keranjang,
+            subtotal,
+            diskon,
+            ongkir,
+            total: totalBayar,
+            tanggal: new Date().toLocaleString()
+        };
+
+        const riwayatLama = JSON.parse(localStorage.getItem('riwayat') || '[]');
+        localStorage.setItem('riwayat', JSON.stringify([dataPesananBaru, ...riwayatLama]));
+
+        setStrukData(dataPesananBaru);
+        localStorage.removeItem('keranjang');
+        setKeranjang([]);
+        window.dispatchEvent(new Event("keranjang-berubah"));
+        setPesanError('');
+    };
+
+    if (strukData) {
+        return (
+            <div className="p-6 max-w-xl mx-auto border border-slate-700 rounded shadow bg-slate-900 text-slate-100 mt-6">
+                <h1 className="text-2xl font-bold text-green-500 mb-2">Pesanan Berhasil!</h1>
+                <p className="mb-4 text-slate-300">Terima kasih, <strong>{strukData.nama}</strong>.</p>
+                
+                <div className="border-t border-slate-700 border-b py-3 space-y-2 mb-4">
+                    <p className="text-sm font-semibold text-slate-200">Rincian Pesanan:</p>
+                    {strukData.item.map((i: any) => (
+                        <div key={i.id} className="flex justify-between text-sm text-slate-300">
+                            <span>{i.nama} x{i.jumlah}</span>
+                            <span>{rupiah(i.harga * i.jumlah)}</span>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="space-y-1 text-sm text-right mb-6 text-slate-300">
+                    <p>Subtotal: {rupiah(strukData.subtotal)}</p>
+                    {strukData.diskon > 0 && <p className="text-green-400">Diskon: -{rupiah(strukData.diskon)}</p>}
+                    <p>Ongkir: {rupiah(strukData.ongkir)}</p>
+                    <p className="text-base font-bold text-slate-100">Total bayar: {rupiah(strukData.total)}</p>
+                    <p className="text-xs text-slate-400 mt-2">
+                        {strukData.metode === 'diantar' ? `Diantar ke kelas: ${strukData.kelas}` : 'Ambil sendiri di kantin'}
+                    </p>
+                </div>
+
+                <Link href="/menu" className="block text-center bg-orange-600 text-white py-2 rounded font-semibold hover:bg-orange-700">
+                    Kembali ke Menu
+                </Link>
+            </div>
+        );
+    }
+
     if (keranjang.length === 0) {
         return (
-            <div className="p-6 text-center">
-                <p className="text-slate-500 mb-4">Keranjang masih kosong</p>
-                <Link href="/menu" className="text-blue-600 hover:underline">
+            <div className="p-6 text-center text-slate-300">
+                <p className="mb-4">Keranjang masih kosong</p>
+                <Link href="/menu" className="text-orange-500 hover:underline">
                     Lihat Katalog Menu
                 </Link>
             </div>
@@ -93,70 +169,99 @@ export default function HalamanKeranjang() {
     }
 
     return (
-        <div className="p-6 max-w-2xl mx-auto">
+        <div className="p-6 max-w-2xl mx-auto text-slate-100">
             <h1 className="text-2xl font-bold mb-4">Keranjang Belanja</h1>
-            
+
             <div className="space-y-4 mb-6">
                 {keranjang.map((item) => {
                     const subtotalItem = item.harga * item.jumlah;
                     return (
-                        <div key={item.id} className="border p-4 rounded flex justify-between items-center">
+                        <div key={item.id} className="border border-slate-700 bg-slate-900 p-4 rounded flex justify-between items-center shadow-sm">
                             <div>
-                                <h3 className="font-semibold">{item.nama}</h3>
-                                <p className="text-sm text-slate-600">
+                                <h3 className="font-semibold text-slate-100">{item.nama}</h3>
+                                <p className="text-sm text-slate-400">
                                     {rupiah(item.harga)} x {item.jumlah} = {rupiah(subtotalItem)}
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => handleKurang(item.id)}
-                                    className="px-2 py-1 border rounded bg-slate-100"
-                                >
-                                    -
-                                </button>
-                                <span>{item.jumlah}</span>
-                                <button
-                                    onClick={() => handleTambah(item.id)}
-                                    className="px-2 py-1 border rounded bg-slate-100"
-                                >
-                                    +
-                                </button>
-                                <button
-                                    onClick={() => handleHapus(item.id)}
-                                    className="ml-4 px-3 py-1 bg-red-600 text-white rounded text-sm"
-                                >
-                                    Hapus
-                                </button>
+                                <button onClick={() => handleKurang(item.id)} className="px-2 py-1 border border-slate-600 rounded bg-slate-800 text-slate-200 hover:bg-slate-700">-</button>
+                                <span className="text-slate-100">{item.jumlah}</span>
+                                <button onClick={() => handleTambah(item.id)} className="px-2 py-1 border border-slate-600 rounded bg-slate-800 text-slate-200 hover:bg-slate-700">+</button>
+                                <button onClick={() => handleHapus(item.id)} className="ml-4 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">Hapus</button>
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            <div className="border-t pt-4 mb-6">
+            {/* Bagian Kode Promo */}
+            <div className="border-t border-slate-700 pt-4 mb-6">
                 <div className="flex gap-2 mb-2">
                     <input
                         type="text"
                         value={kodePromo}
                         onChange={(e) => setKodePromo(e.target.value)}
                         placeholder="Masukkan kode promo"
-                        className="border px-3 py-1 rounded flex-grow"
+                        className="border border-slate-700 bg-slate-900 px-3 py-1 rounded flex-grow text-slate-100 placeholder-slate-500"
                     />
-                    <button
-                        onClick={handlePakaiPromo}
-                        className="bg-slate-800 text-white px-4 py-1 rounded"
-                    >
-                        Pakai
-                    </button>
+                    <button onClick={handlePakaiPromo} className="bg-slate-800 border border-slate-700 text-slate-200 px-4 py-1 rounded hover:bg-slate-700">Pakai</button>
                 </div>
-                {pesanPromo && <p className="text-sm text-slate-600">{pesanPromo}</p>}
+                {pesanPromo && <p className="text-sm text-slate-400">{pesanPromo}</p>}
             </div>
 
-            <div className="border-t pt-4 space-y-1 text-right">
-                <p>Subtotal: {rupiah(subtotal)}</p>
-                {diskon > 0 && <p className="text-green-600">Diskon: -{rupiah(diskon)}</p>}
-                <p className="text-xl font-bold">Total: {rupiah(subtotal - diskon)}</p>
+            {/* Bagian Pilihan Cara Ambil */}
+            <div className="border-t border-slate-700 pt-4 mb-6 space-y-2">
+                <p className="font-semibold text-slate-200">Cara Ambil:</p>
+                <div className="flex gap-4 text-slate-300">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="metode" checked={metodeKirim === 'ambil'} onChange={() => setMetodeKirim('ambil')} />
+                        Ambil sendiri
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="metode" checked={metodeKirim === 'diantar'} onChange={() => setMetodeKirim('diantar')} />
+                        Diantar (+Rp 2.000)
+                    </label>
+                </div>
             </div>
+
+            {/* Formulir Pemesan & Tombol Pesan */}
+            <form onSubmit={handlePesanSekarang} className="border-t border-slate-700 pt-4 space-y-4">
+                {metodeKirim === 'diantar' && (
+                    <div>
+                        <label className="block text-sm font-medium mb-1 text-slate-200">Kelas Tujuan:</label>
+                        <input
+                            type="text"
+                            value={kelas}
+                            onChange={(e) => setKelas(e.target.value)}
+                            placeholder="Contoh: X IPA 1"
+                            className="border border-slate-700 bg-slate-900 px-3 py-2 rounded w-full text-slate-100 placeholder-slate-500"
+                        />
+                    </div>
+                )}
+                <div>
+                    <label className="block text-sm font-medium mb-1 text-slate-200">Nama Pemesan:</label>
+                    <input
+                        type="text"
+                        value={namaPemesan}
+                        onChange={(e) => setNamaPemesan(e.target.value)}
+                        placeholder="Masukkan nama lengkap"
+                        className="border border-slate-700 bg-slate-900 px-3 py-2 rounded w-full text-slate-100 placeholder-slate-500"
+                    />
+                </div>
+
+                <div className="border-t border-slate-700 pt-4 space-y-1 text-right text-slate-300">
+                    <p>Subtotal: {rupiah(subtotal)}</p>
+                    {diskon > 0 && <p className="text-green-400">Diskon: -{rupiah(diskon)}</p>}
+                    {metodeKirim === 'diantar' && <p>Ongkir: {rupiah(ongkir)}</p>}
+                    <p className="text-xl font-bold text-slate-100">Total: {rupiah(totalBayar)}</p>
+                </div>
+
+                {pesanError && <p className="text-sm text-red-400">{pesanError}</p>}
+
+                <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded font-semibold hover:bg-orange-700">
+                    Pesan Sekarang
+                </button>
+            </form>
         </div>
     );
 }
