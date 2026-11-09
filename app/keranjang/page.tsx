@@ -150,7 +150,7 @@ export default function HalamanKeranjang() {
                     </p>
                 </div>
 
-                <Link href="/menu" className="block text-center bg-orange-600 text-white py-2 rounded font-semibold hover:bg-orange-700">
+                <Link href="/menu" className="block text-center bg-orange-600 text-white py-2 rounded font-semibold hover:bg-green-600">
                     Kembali ke Menu
                 </Link>
             </div>
@@ -258,7 +258,7 @@ export default function HalamanKeranjang() {
 
                 {pesanError && <p className="text-sm text-red-400">{pesanError}</p>}
 
-                <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded font-semibold hover:bg-orange-700">
+                <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded font-semibold hover:bg-green-700">
                     Pesan Sekarang
                 </button>
             </form>
