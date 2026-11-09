@@ -17,7 +17,7 @@ export default function HalamanRiwayat() {
     if (riwayat.length === 0) {
         return (
             <div className="p-6 text-center text-slate-300">
-                <p className="mb-4">Belum ada riwayat pesanan.</p>
+                <p className="mb-4">Belum ada pesanan.</p>
                 <Link href="/menu" className="text-orange-500 hover:underline">
                     Mulai Belanja
                 </Link>
@@ -25,9 +25,18 @@ export default function HalamanRiwayat() {
         );
     }
 
+    const totalBelanjaSemua = riwayat.reduce((acc, curr) => acc + curr.total, 0);
+
     return (
         <div className="p-6 max-w-2xl mx-auto space-y-6 text-slate-100">
-            <h1 className="text-2xl font-bold mb-4">Riwayat Pesanan</h1>
+            <h1 className="text-2xl font-bold mb-2">Riwayat Pesanan</h1>
+            
+            {/* Ringkasan Pesanan & Total Belanja */}
+            <div className="border border-slate-700 bg-slate-900 p-4 rounded text-sm space-y-1 text-slate-300">
+                <p>Ringkasan: <span className="font-semibold text-slate-100">{riwayat.length} pesanan</span></p>
+                <p>Total belanja keseluruhan: <span className="font-semibold text-orange-400">{rupiah(totalBelanjaSemua)}</span></p>
+            </div>
+
             {riwayat.map((pesanan) => (
                 <div key={pesanan.id} className="border border-slate-700 bg-slate-900 p-4 rounded shadow-sm space-y-2">
                     <div className="flex justify-between text-sm text-slate-400">
