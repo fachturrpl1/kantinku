@@ -1,3 +1,5 @@
+'use client'
+
 import KatalogMenu from "@/app/components/KatalogMenu";
 import { menu } from "@/data/menu";
 
