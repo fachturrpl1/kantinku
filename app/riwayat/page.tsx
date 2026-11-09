@@ -26,12 +26,19 @@ interface Pesanan {
 }
 
 export default function HalamanRiwayat() {
-    // Inisialisasi state langsung dari localStorage (Lazy Initial State)
-    const [riwayat] = useState<Pesanan[]>(() => {
+    const [riwayat, setRiwayat] = useState<Pesanan[]>(() => {
         if (typeof window === 'undefined') return [];
         const data = localStorage.getItem('riwayat');
         return data ? JSON.parse(data) : [];
     });
+
+    const handleHapusRiwayat = () => {
+        const konfirmasi = window.confirm('Apakah Anda yakin ingin menghapus seluruh riwayat pesanan?');
+        if (konfirmasi) {
+            localStorage.removeItem('riwayat');
+            setRiwayat([]);
+        }
+    };
 
     if (riwayat.length === 0) {
         return (
@@ -48,7 +55,15 @@ export default function HalamanRiwayat() {
 
     return (
         <div className="p-6 max-w-2xl mx-auto space-y-6 text-slate-100">
-            <h1 className="text-2xl font-bold mb-2">Riwayat Pesanan</h1>
+            <div className="flex justify-between items-center mb-2">
+                <h1 className="text-2xl font-bold">Riwayat Pesanan</h1>
+                <button
+                    onClick={handleHapusRiwayat}
+                    className="px-3 py-1.5 bg-red-600 text-white rounded text-sm font-semibold hover:bg-red-700 transition-colors"
+                >
+                    Hapus Riwayat
+                </button>
+            </div>
             
             {/* Ringkasan Pesanan & Total Belanja */}
             <div className="border border-slate-700 bg-slate-900 p-4 rounded text-sm space-y-1 text-slate-300">
