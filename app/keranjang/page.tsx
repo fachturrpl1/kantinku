@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { rupiah } from '@/data/menu'
 import Link from 'next/link'
 
@@ -12,24 +12,38 @@ interface ItemKeranjang {
     stok: number;
 }
 
+interface StrukPesanan {
+    id: number;
+    nama: string;
+    kelas: string;
+    metode: string;
+    item: ItemKeranjang[];
+    subtotal: number;
+    diskon: number;
+    ongkir: number;
+    total: number;
+    tanggal: string;
+}
+
 export default function HalamanKeranjang() {
-    const [keranjang, setKeranjang] = useState<ItemKeranjang[]>([]);
-    const [kodePromo, setKodePromo] = useState('');
-    const [diskon, setDiskon] = useState(0);
+    // 1. Menggunakan Lazy Initial State untuk menghindari setState di useEffect
+    const [keranjang, setKeranjang] = useState<ItemKeranjang[]>(() => {
+        if (typeof window === 'undefined') return [];
+        const data = localStorage.getItem('keranjang');
+        return data ? JSON.parse(data) : [];
+    });
+
+    const [inputPromo, setInputPromo] = useState('');
+    const [promoAktif, setPromoAktif] = useState(false);
     const [pesanPromo, setPesanPromo] = useState('');
     
     const [metodeKirim, setMetodeKirim] = useState('ambil');
     const [namaPemesan, setNamaPemesan] = useState('');
     const [kelas, setKelas] = useState('');
     const [pesanError, setPesanError] = useState('');
-    const [strukData, setStrukData] = useState<any>(null);
 
-    useEffect(() => {
-        const data = localStorage.getItem('keranjang');
-        if (data) {
-            setKeranjang(JSON.parse(data));
-        }
-    }, []);
+    // 2. Tipe data terdefinisi eksplisit tanpa 'any'
+    const [strukData, setStrukData] = useState<StrukPesanan | null>(null);
 
     const simpanDanPerbarui = (dataBaru: ItemKeranjang[]) => {
         setKeranjang(dataBaru);
@@ -65,28 +79,21 @@ export default function HalamanKeranjang() {
     const subtotal = keranjang.reduce((acc, item) => acc + item.harga * item.jumlah, 0);
 
     const handlePakaiPromo = () => {
-        if (kodePromo.trim().toUpperCase() === 'HEMAT10') {
+        if (inputPromo.trim().toUpperCase() === 'HEMAT10') {
             if (subtotal >= 20000) {
-                const nilaiDiskon = Math.round(subtotal * 0.1);
-                setDiskon(nilaiDiskon);
+                setPromoAktif(true);
                 setPesanPromo('Promo HEMAT10 dipakai: diskon 10%.');
             } else {
-                setDiskon(0);
+                setPromoAktif(false);
                 setPesanPromo('Promo HEMAT10 butuh belanja minimal Rp 20.000.');
             }
         } else {
-            setDiskon(0);
+            setPromoAktif(false);
             setPesanPromo('Kode promo tidak dikenal.');
         }
     };
 
-    useEffect(() => {
-        if (subtotal < 20000 && diskon > 0) {
-            setDiskon(0);
-            setPesanPromo('Belanja kurang dari Rp 20.000, diskon otomatis dibatalkan.');
-        }
-    }, [subtotal, diskon]);
-
+    const diskon = (promoAktif && subtotal >= 20000) ? Math.round(subtotal * 0.1) : 0;
     const ongkir = metodeKirim === 'diantar' ? 2000 : 0;
     const totalBayar = subtotal - diskon + ongkir;
 
@@ -101,8 +108,12 @@ export default function HalamanKeranjang() {
             return;
         }
 
-        const dataPesananBaru = {
-            id: Date.now(),
+        // 3. Menyiapkan ID & Waktu secara eksplisit saat submit event
+        const pesananId = Number(new Date().getTime());
+        const waktuSekarang = new Date().toLocaleString();
+
+        const dataPesananBaru: StrukPesanan = {
+            id: pesananId,
             nama: namaPemesan,
             kelas: metodeKirim === 'diantar' ? kelas : '-',
             metode: metodeKirim,
@@ -111,7 +122,7 @@ export default function HalamanKeranjang() {
             diskon,
             ongkir,
             total: totalBayar,
-            tanggal: new Date().toLocaleString()
+            tanggal: waktuSekarang
         };
 
         const riwayatLama = JSON.parse(localStorage.getItem('riwayat') || '[]');
@@ -132,7 +143,7 @@ export default function HalamanKeranjang() {
                 
                 <div className="border-t border-slate-700 border-b py-3 space-y-2 mb-4">
                     <p className="text-sm font-semibold text-slate-200">Rincian Pesanan:</p>
-                    {strukData.item.map((i: any) => (
+                    {strukData.item.map((i: ItemKeranjang) => (
                         <div key={i.id} className="flex justify-between text-sm text-slate-300">
                             <span>{i.nama} x{i.jumlah}</span>
                             <span>{rupiah(i.harga * i.jumlah)}</span>
@@ -150,7 +161,7 @@ export default function HalamanKeranjang() {
                     </p>
                 </div>
 
-                <Link href="/menu" className="block text-center bg-orange-600 text-white py-2 rounded font-semibold hover:bg-green-600">
+                <Link href="/menu" className="block text-center bg-orange-600 text-white py-2 rounded font-semibold hover:bg-orange-700">
                     Kembali ke Menu
                 </Link>
             </div>
@@ -199,8 +210,8 @@ export default function HalamanKeranjang() {
                 <div className="flex gap-2 mb-2">
                     <input
                         type="text"
-                        value={kodePromo}
-                        onChange={(e) => setKodePromo(e.target.value)}
+                        value={inputPromo}
+                        onChange={(e) => setInputPromo(e.target.value)}
                         placeholder="Masukkan kode promo"
                         className="border border-slate-700 bg-slate-900 px-3 py-1 rounded flex-grow text-slate-100 placeholder-slate-500"
                     />
@@ -258,7 +269,7 @@ export default function HalamanKeranjang() {
 
                 {pesanError && <p className="text-sm text-red-400">{pesanError}</p>}
 
-                <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded font-semibold hover:bg-green-700">
+                <button type="submit" className="w-full bg-orange-600 text-white py-2 rounded font-semibold hover:bg-orange-700">
                     Pesan Sekarang
                 </button>
             </form>

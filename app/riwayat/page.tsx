@@ -1,18 +1,37 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { rupiah } from '@/data/menu'
 import Link from 'next/link'
 
-export default function HalamanRiwayat() {
-    const [riwayat, setRiwayat] = useState<any[]>([]);
+interface ItemPesanan {
+    id: number;
+    nama: string;
+    harga: number;
+    jumlah: number;
+    stok: number;
+}
 
-    useEffect(() => {
+interface Pesanan {
+    id: number;
+    nama: string;
+    kelas: string;
+    metode: string;
+    item: ItemPesanan[];
+    subtotal: number;
+    diskon: number;
+    ongkir: number;
+    total: number;
+    tanggal: string;
+}
+
+export default function HalamanRiwayat() {
+    // Inisialisasi state langsung dari localStorage (Lazy Initial State)
+    const [riwayat] = useState<Pesanan[]>(() => {
+        if (typeof window === 'undefined') return [];
         const data = localStorage.getItem('riwayat');
-        if (data) {
-            setRiwayat(JSON.parse(data));
-        }
-    }, []);
+        return data ? JSON.parse(data) : [];
+    });
 
     if (riwayat.length === 0) {
         return (
@@ -45,7 +64,7 @@ export default function HalamanRiwayat() {
                     </div>
                     <p className="font-bold text-slate-100">Pemesan: {pesanan.nama} ({pesanan.kelas})</p>
                     <div className="border-t border-slate-700 border-b py-2 space-y-1">
-                        {pesanan.item.map((i: any) => (
+                        {pesanan.item.map((i) => (
                             <div key={i.id} className="flex justify-between text-sm text-slate-300">
                                 <span>{i.nama} x{i.jumlah}</span>
                                 <span>{rupiah(i.harga * i.jumlah)}</span>

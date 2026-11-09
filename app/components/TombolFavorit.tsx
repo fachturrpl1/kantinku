@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 export default function TombolFavorit({ menuId }: { menuId: number }) {
-    const [isFavorit, setIsFavorit] = useState(false);
-
-    useEffect(() => {
+    // Inisialisasi state langsung dari localStorage agar bebas dari peringatan useEffect
+    const [isFavorit, setIsFavorit] = useState(() => {
+        if (typeof window === 'undefined') return false;
         const favoritList = JSON.parse(localStorage.getItem('favorit') || '[]');
-        setIsFavorit(favoritList.includes(menuId));
-    }, [menuId]);
+        return favoritList.includes(menuId);
+    });
 
     const toggleFavorit = () => {
         const favoritList = JSON.parse(localStorage.getItem('favorit') || '[]');
@@ -25,7 +25,7 @@ export default function TombolFavorit({ menuId }: { menuId: number }) {
     return (
         <button
             onClick={toggleFavorit}
-            className="mt-4 px-4 py-2 border border-slate-700 rounded bg-slate-800 text-slate-100 hover:bg-slate-700 flex items-center gap-2"
+            className="mt-4 px-4 py-2 border border-slate-700 rounded bg-slate-800 text-slate-100 hover:bg-slate-700 flex items-center gap-2 transition-colors"
         >
             {isFavorit ? '♥ Favorit' : '♡ Tambah favorit'}
         </button>

@@ -1,19 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { rupiah } from '@/data/menu'
+import { Menu, rupiah } from '@/data/menu'
 import Link from 'next/link'
 
 export default function HalamanFavorit() {
-    const [menuList, setMenuList] = useState<any[]>([]);
-    const [favoritIds, setFavoritIds] = useState<number[]>([]);
+    const [favoritIds] = useState<number[]>(() => {
+        if (typeof window === 'undefined') return [];
+        return JSON.parse(localStorage.getItem('favorit') || '[]');
+    });
+
+    const [menuList, setMenuList] = useState<Menu[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        const fav = JSON.parse(localStorage.getItem('favorit') || '[]');
-        setFavoritIds(fav);
-
         fetch('/api/menu')
             .then((res) => {
                 if (!res.ok) throw new Error('Gagal memuat data menu');
