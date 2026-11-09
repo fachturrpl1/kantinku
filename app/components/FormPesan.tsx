@@ -16,7 +16,17 @@ export default function FormPesan({ menu }: { menu: Menu }) {
     const [pesan, setPesan] = useState('');
 
     if (menu.stok === 0) {
-        return <p className="text-red-400 font-bold mt-4">Menu ini habis</p>;
+        return (
+            <div className="mt-6 border-t border-slate-700 pt-4">
+                <p className="text-red-400 font-bold mb-2">Menu ini habis</p>
+                <button 
+                    disabled 
+                    className="bg-slate-800 text-slate-500 px-4 py-2 rounded font-medium cursor-not-allowed border border-slate-700"
+                >
+                    Stok Habis
+                </button>
+            </div>
+        );
     }
 
     const handleKurang = () => {
