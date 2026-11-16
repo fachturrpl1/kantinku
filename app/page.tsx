@@ -12,7 +12,7 @@ export default function Beranda() {
           href='/menu'
           className='mt-6 inline-block rounded-lg px-5 py-2 font-medium bg-orange-600 hover:bg-green-600'
         >
-          Lihat semua memu
+          Lihat semua memu yang ada.
         </Link>
       </section>
     </div>
