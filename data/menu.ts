@@ -18,3 +18,5 @@ export const menu: Menu[] = [
 export function rupiah(n: number) {
     return "Rp " + n.toLocaleString("id-ID");
 }
+
+//siap tayang
